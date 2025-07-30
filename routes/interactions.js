@@ -8,6 +8,7 @@ const router = express.Router();
 // ✅ GET interaction stats for multiple postIds
 router.post("/stats", async (req, res) => {
   const { postIds } = req.body;
+  console.log('[STATS] Fetching stats for postIds:', postIds);
 
   try {
     const stats = await Interaction.find({ postId: { $in: postIds } });
@@ -16,9 +17,10 @@ router.post("/stats", async (req, res) => {
     stats.forEach((stat) => {
       statsMap[stat.postId] = { likes: stat.likes, views: stat.views };
     });
-
+    console.log('[STATS] Stats found:', statsMap);
     res.json(statsMap);
   } catch (err) {
+    console.error('[STATS] Failed to fetch stats:', err);
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
@@ -26,14 +28,17 @@ router.post("/stats", async (req, res) => {
 // ✅ POST: increase like
 router.post("/like/:postId", async (req, res) => {
   const { postId } = req.params;
+  console.log('[LIKE] Received like request for postId:', postId);
   try {
     const interaction = await Interaction.findOneAndUpdate(
       { postId },
       { $inc: { likes: 1 } },
       { new: true, upsert: true }
     );
+    console.log('[LIKE] Updated interaction:', interaction);
     res.json({ likes: interaction.likes });
   } catch (err) {
+    console.error('[LIKE] Failed to like post:', err);
     res.status(500).json({ error: "Failed to like post" });
   }
 });
@@ -41,32 +46,19 @@ router.post("/like/:postId", async (req, res) => {
 // ✅ POST: increase view
 router.post("/view/:postId", async (req, res) => {
   const { postId } = req.params;
+  console.log('[VIEW] Received view request for postId:', postId);
   try {
     const interaction = await Interaction.findOneAndUpdate(
       { postId },
       { $inc: { views: 1 } },
       { new: true, upsert: true }
     );
+    console.log('[VIEW] Updated interaction:', interaction);
     res.json({ views: interaction.views });
   } catch (err) {
+    console.error('[VIEW] Failed to increase view:', err);
     res.status(500).json({ error: "Failed to increase view" });
   }
-});
-
-// ✅ Add in routes/interactions.js or a new one if needed
-router.post("/stats", async (req, res) => {
-  const { postIds } = req.body;
-  const stats = {};
-
-  for (const id of postIds) {
-    const record = await PostStats.findOne({ postId: id });
-    stats[id] = {
-      likes: record?.likes || 0,
-      views: record?.views || 0,
-    };
-  }
-
-  res.json(stats);
 });
 
 
