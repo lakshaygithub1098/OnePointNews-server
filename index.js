@@ -3,7 +3,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
-import axios from "axios"; // ✅ required for API call
+import axios from "axios";
 
 import newsRoutes from "./routes/news.js";
 import interactionsRoute from "./routes/interactions.js";
@@ -14,26 +14,32 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ API routes
 app.use("/api/news", newsRoutes);
 app.use("/api/interactions", interactionsRoute);
 
-// ✅ Root route: returns news JSON directly from Guardian API
+// ✅ Main route to fetch news from Guardian API
 app.get("/", async (req, res) => {
   try {
+    console.log("🔑 NEWS_API_KEY:", process.env.NEWS_API_KEY);
+
     const response = await axios.get(
-      `https://content.guardianapis.com/search?api-key=${process.env.GUARDIAN_API_KEY}&show-fields=thumbnail,headline,short-url,body`
+      "https://content.guardianapis.com/search", {
+        params: {
+          "api-key": process.env.NEWS_API_KEY,
+          "show-fields": "thumbnail,headline,short-url,body",
+          "page-size": 10
+        }
+      }
     );
 
-    const newsData = response.data.response.results;
-    res.json(newsData); // ✅ return array of news articles
+    const articles = response.data.response.results;
+    res.json(articles);
   } catch (error) {
-    console.error("❌ Error fetching news from Guardian API:", error.message);
+    console.error("❌ Failed to fetch news:", error.message);
     res.status(500).json({ message: "Failed to fetch news" });
   }
 });
 
-// ✅ MongoDB connection and server start
 const PORT = process.env.PORT || 5000;
 mongoose
   .connect(process.env.MONGO_URI)
